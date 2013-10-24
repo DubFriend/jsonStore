@@ -82,8 +82,13 @@ class jsonStore_Test extends PHPUnit_Framework_TestCase {
     function testDelete() {
         $this->createDefaultFile();
         $json = new jsonStore('test');
-        $json->delete(array('col' => 'b'));
-        $this->assertEquals($this->getData(), array($this->row1()));
+        $json->delete(array('id' => 1));
+        $this->assertEquals($this->getData(), array(
+            $this->row2(), $this->row3()
+        ));
+        //$json->delete(array('col' => 'b'));
+        //$this->assertEquals($this->getData(), array($this->row1()));
     }
+
 }
 ?>

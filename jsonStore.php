@@ -1,6 +1,6 @@
 <?php
 class jsonStore {
-    private $path, $data;//, $nextId;
+    private $path, $data;
     function __construct($path) {
         $this->path = $path . '.json';
         if(!file_exists($this->path)) {
@@ -10,23 +10,22 @@ class jsonStore {
         else {
             $this->load();
         }
-        // $this->nextId = count($this->data) === 0 ?
-        //     1 : $this->data[count($this->data) - 1]['id'] + 1;
     }
 
     function select(array $whereEquals = array()) {
         $results = array();
-        $this->eachRowWhereEquals($whereEquals, function ($row, $index) use (&$results) {
-            $results[] = $row;
-        });
+        $this->eachRowWhereEquals(
+            $whereEquals,
+            function ($row, $index) use (&$results) {
+                $results[] = $row;
+            }
+        );
         return $results;
     }
 
     function insert(array $row = array()) {
         if(!array_key_exists('id', $row)) {
             $row['id'] = uniqid();
-            // $row['id'] = $this->nextId;
-            // $this->nextId += 1;
         }
         if(count($this->select(array('id' => $row['id']))) > 0) {
             throw new Exception("id " . $row['id'] . " allready exists");
@@ -39,23 +38,30 @@ class jsonStore {
     }
 
     function update(array $update = array(), array $whereEquals = array()) {
-        $this->eachRowWhereEquals($whereEquals, function ($row, $index) use ($update) {
-            foreach($update as $key => $value) {
-                $this->data[$index][$key] = $value;
+        $this->eachRowWhereEquals(
+            $whereEquals,
+            function ($row, $index) use ($update) {
+                foreach($update as $key => $value) {
+                    $this->data[$index][$key] = $value;
+                }
             }
-        });
+        );
         $this->save();
     }
 
     function delete(array $whereEquals = array()) {
         $toDelete = array();
-        $this->eachRowWhereEquals($whereEquals, function ($row, $index) use (&$toDelete) {
-            $toDelete[] = $index;
-        });
+        $this->eachRowWhereEquals(
+            $whereEquals,
+            function ($row, $index) use (&$toDelete) {
+                $toDelete[] = $index;
+            }
+        );
         //loop backwords to avoid indeces going out of sync.
         for($i = count($toDelete) - 1; $i >= 0; $i -= 1) {
             unset($this->data[$toDelete[$i]]);
         }
+        $this->data = $this->reIndexArray($this->data);
         $this->save();
     }
 
@@ -72,6 +78,14 @@ class jsonStore {
                 $callback($row, $i);
             }
         }
+    }
+
+    private function reIndexArray(array $array) {
+        $reIndexed = array();
+        foreach($array as $value) {
+            $reIndexed[] = $value;
+        }
+        return $reIndexed;
     }
 
     private function load() {
