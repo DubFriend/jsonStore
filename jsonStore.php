@@ -1,6 +1,6 @@
 <?php
 class jsonStore {
-    private $path, $data, $nextId;
+    private $path, $data;//, $nextId;
     function __construct($path) {
         $this->path = $path . '.json';
         if(!file_exists($this->path)) {
@@ -8,30 +8,25 @@ class jsonStore {
             $this->data = array();
         }
         else {
-            $this->data = $this->load();
+            $this->load();
         }
-        $this->nextId = count($this->data) === 0 ?
-            1 : $this->data[count($this->data) - 1]['id'] + 1;
+        // $this->nextId = count($this->data) === 0 ?
+        //     1 : $this->data[count($this->data) - 1]['id'] + 1;
     }
 
     function select(array $whereEquals = array()) {
         $results = array();
-        foreach($this->data as $row) {
+        $this->eachRowWhereEquals($whereEquals, function ($row, $index) use (&$results) {
             $results[] = $row;
-            foreach($whereEquals as $column => $value) {
-                if(!array_key_exists($column, $row) || $row[$column] != $value) {
-                    array_pop($results);
-                    break;
-                }
-            }
-        }
+        });
         return $results;
     }
 
     function insert(array $row = array()) {
         if(!array_key_exists('id', $row)) {
-            $row['id'] = $this->nextId;
-            $this->nextId += 1;
+            $row['id'] = uniqid();
+            // $row['id'] = $this->nextId;
+            // $this->nextId += 1;
         }
         if(count($this->select(array('id' => $row['id']))) > 0) {
             throw new Exception("id " . $row['id'] . " allready exists");
@@ -39,24 +34,52 @@ class jsonStore {
         else {
             $this->data[] = $row;
         }
-        $this->save($this->data);
+        $this->save();
         return $row['id'];
     }
 
-    function update(array $row = array(), array $whereEquals = array()) {
-
+    function update(array $update = array(), array $whereEquals = array()) {
+        $this->eachRowWhereEquals($whereEquals, function ($row, $index) use ($update) {
+            foreach($update as $key => $value) {
+                $this->data[$index][$key] = $value;
+            }
+        });
+        $this->save();
     }
 
     function delete(array $whereEquals = array()) {
+        $toDelete = array();
+        $this->eachRowWhereEquals($whereEquals, function ($row, $index) use (&$toDelete) {
+            $toDelete[] = $index;
+        });
+        //loop backwords to avoid indeces going out of sync.
+        for($i = count($toDelete) - 1; $i >= 0; $i -= 1) {
+            unset($this->data[$toDelete[$i]]);
+        }
+        $this->save();
+    }
 
+    private function eachRowWhereEquals(array $whereEquals, $callback) {
+        for($i = 0; $i < count($this->data); $i += 1) {
+            $row = $this->data[$i];
+            $isMatch = true;
+            foreach($whereEquals as $column => $value) {
+                if(!array_key_exists($column, $row) || $row[$column] != $value) {
+                    $isMatch = false;
+                }
+            }
+            if($isMatch) {
+                $callback($row, $i);
+            }
+        }
     }
 
     private function load() {
-        return json_decode(file_get_contents($this->path), true);
+        $this->data = json_decode(file_get_contents($this->path), true);
     }
 
-    private function save(array $data = array()) {
-        file_put_contents($this->path, json_encode($data));
+    private function save() {
+        file_put_contents($this->path, json_encode($this->data));
     }
 }
 ?>
