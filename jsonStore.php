@@ -27,12 +27,10 @@ class jsonStore {
         if(!array_key_exists('id', $row)) {
             $row['id'] = uniqid();
         }
-        if(count($this->select(array('id' => $row['id']))) > 0) {
-            throw new Exception("id " . $row['id'] . " allready exists");
+        while (count($this->select(array('id' => $row['id']))) > 0) {
+            $row['id'] = uniqid();
         }
-        else {
-            $this->data[] = $row;
-        }
+        $this->data[] = $row;
         $this->save();
         return $row['id'];
     }
