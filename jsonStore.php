@@ -1,4 +1,8 @@
 <?php
+//https://github.com/DubFriend/jsonStore
+
+class jsonStoreException extends Exception {}
+
 class jsonStore {
     private $path, $data;
     function __construct($path) {
@@ -26,9 +30,16 @@ class jsonStore {
     function insert(array $row = array()) {
         if(!array_key_exists('id', $row)) {
             $row['id'] = uniqid();
+            while (count($this->select(array('id' => $row['id']))) > 0) {
+                $row['id'] = uniqid();
+            }
         }
-        while (count($this->select(array('id' => $row['id']))) > 0) {
-            $row['id'] = uniqid();
+        else {
+            if(count($this->select(array('id' => $row['id']))) > 0) {
+                throw new jsonStoreException(
+                    'row with id ' . $row['id'] . ' allready exists.'
+                );
+            }
         }
         $this->data[] = $row;
         $this->save();

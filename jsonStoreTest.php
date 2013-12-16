@@ -86,8 +86,15 @@ class jsonStore_Test extends PHPUnit_Framework_TestCase {
         $this->assertEquals($this->getData(), array(
             $this->row2(), $this->row3()
         ));
-        //$json->delete(array('col' => 'b'));
-        //$this->assertEquals($this->getData(), array($this->row1()));
+    }
+
+    /**
+     * @expectedException jsonStoreException
+     */
+    function testInsertRowIDAllreadyExists() {
+        $this->createDefaultFile();
+        $json = new jsonStore('test');
+        $json->insert(array('id' => 1, 'col' => 'edit'));
     }
 
 }

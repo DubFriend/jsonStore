@@ -23,7 +23,7 @@ $json->select();
 ```php
 $insertID = $json->insert(array('column' => 'value'));
 ```
-if not given an 'id' column, jsonStore will generate one for you.  In either case, insert will throw an exception if a row with the same id allready exists.
+if not given an 'id' column, jsonStore will generate one for you. $json->insert will throw an exception if you try to insert with an id that allready exists.
 
 ###Update
 ####null update(array $updates, array $whereEquals)
